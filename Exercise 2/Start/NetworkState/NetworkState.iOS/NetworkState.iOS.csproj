@@ -28,10 +28,8 @@
     <MtouchLink>None</MtouchLink>
     <MtouchDebug>true</MtouchDebug>
     <EnvironmentVariables>
-      <EnvironmentVariables>
-        <Variable name="MONO_LOG_LEVEL" value="debug" />
-        <Variable name="MONO_LOG_MASK" value="gc" />
-      </EnvironmentVariables>
+      <Variable name="MONO_LOG_LEVEL" value="debug" />
+      <Variable name="MONO_LOG_MASK" value="gc" />
     </EnvironmentVariables>
     <MtouchProfiling>true</MtouchProfiling>
   </PropertyGroup>
