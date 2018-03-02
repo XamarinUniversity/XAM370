@@ -25,12 +25,14 @@
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchFastDev>true</MtouchFastDev>
     <MtouchDebug>true</MtouchDebug>
+    <CodesignKey>iPhone Developer</CodesignKey>
+    <MtouchProfiling>true</MtouchProfiling>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'Default' ">
     <EnvironmentVariables>
       <Variable name="MONO_LOG_LEVEL" value="debug" />
       <Variable name="MONO_LOG_MASK" value="gc" />
     </EnvironmentVariables>
-    <CodesignKey>iPhone Developer</CodesignKey>
-    <MtouchProfiling>true</MtouchProfiling>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
     <DebugType>full</DebugType>
