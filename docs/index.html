@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+    <title>Diagnosing Memory Management Issues</title>
+    <link rel="stylesheet" type="text/css" href="./parts/res/styles/normalize.css">
+    <link rel="stylesheet" type="text/css" href="./parts/res/styles/prettify.css">
+    <link rel="stylesheet" type="text/css" href="./parts/res/styles/styles.css">
+</head>
+
+<body>
+    <!-- This will be filled in at runtime -->
+    <header role="course-title"></header>
+
+    <section id="main">
+
+        <h2>Before you begin</h2>
+        <p>
+        This is a cross-platform class which primarily focuses on Xamarin.Android and Xamarin.iOS. To fully complete the coding exercises, you will need both development environments with either a simulator/emulator or devices to run the exercise on. Please see the <a href="https://university.xamarin.com/resources/setup-and-troubleshooting">setup page</a> if you need help installing the Xamarin development environment.
+        </p>
+
+        <h2>Overview</h2>
+        <p>
+            In this class, we will look at specific techniques to identify memory issues in our managed applications and then turn to specific Xamarin.iOS and Xamarin.Android issues that many applications encounter.
+        </p>
+
+        <h2>Objectives</h2>
+        <ol>
+           <li>Identify and fix memory leaks in your code</li>
+           <li>Recognize and fix Xamarin.iOS specific memory problems</li>
+           <li>Recognize and fix Xamarin.Android specific memory problems</li>
+        </ol>
+
+        <h2>Lecture</h2>
+        <p><a href="./parts/slides.pdf">XAM370 - Diagnosing Memory Management Issues</a>.</p>
+
+        <h2>Exercises</h2>
+        <p>
+            Exercise materials are available from <a href="https://github.com/XamarinUniversity/XAM370/">GitHub</a>. The code can be cloned through a desktop Git client or <a href="https://github.com/XamarinUniversity/XAM370/archive/master.zip">downloaded directly</a> as a ZIP file.
+        </p>
+        <ol>
+            <li><div class="objective">Using the Xamarin Profiler to monitor allocations</div>
+            <a href="./parts/part1.html">Demonstration</a>
+            <br />
+            In this demonstration, we will examine an application and watch it's memory allocation to identify some potential improvements we can make in the code.
+            </li>
+
+            <li><div class="objective">Finding and fixing delegate reference leaks</div>
+            <a href="./parts/part2.html">Exercise</a>
+            <br />
+            In this exercise, we will track down a memory leak in a Xamarin.Forms application which is caused by an event handler.
+            </li>
+
+            <li><div class="objective">Identifying and breaking strong reference cycles</div>
+            <a href="./parts/part3.html">Exercise</a>
+            <br />
+            In this group exercise, we will troubleshoot and fix a Xamarin.iOS application which has a reference cycle that causes a memory leak.
+            </li>
+
+            <li><div class="objective">Watch out for peer promotions</div>
+            <a href="./parts/part4.html">Exercise</a>
+            <br />
+            In this group exercise, we will fix a case where Xamarin.iOS holds onto a view reference due to a framework peer promotion.
+            </li>
+
+            <li><div class="objective">Show ListView memory and performance with a custom adapter</div>
+            <a href="./parts/part5.html">Demonstration</a>
+            <br />
+            In this final demonstration, we will troubleshoot and fix some performance issues with an Android application which utilizes a <code>ListView</code>.
+            </li>
+        </ol>
+
+        <!-- This section is for additional links and examples that are relevant to 
+            the material in this course -->
+        <h2>Additional resources</h2>
+
+        <div class="wslist">
+            <a href="http://stackoverflow.com/questions/5887248/ios-app-maximum-memory-budget" target="_blank">iOS App Maximum Memory</a>
+            <a href="http://developer.xamarin.com/guides/cross-platform/deployment,_testing,_and_metrics/memory_perf_best_practices/" target="_blank">Memory and Performance Best Practices</a>
+            <a href="http://developer.android.com/training/articles/perf-tips.html" target="_blank">Android Performance Tips</a>
+            <a href="http://www.mono-project.com/docs/advanced/garbage-collector/sgen/working-with-sgen/" target="_blank">Working With SGen</a>         
+            <a href="https://developer.android.com/studio/preview/features/android-profiler.html">Android Profiler in Android Studio</a>
+	    <a href="https:blog.xamarin.com/tips-for-creating-a-smooth-and-fluid-android-ui/">Tips for Creating a Smooth and Fluid Android UI</a>
+	    <a href="https://blog.kloud.com.au/2016/03/08/a-journey-of-hunting-memory-leaks-in-xamarin/">A Journey of Hunting Memory Leaks in Xamarin</a>
+        </div>
+
+    </section>
+
+    <script src="./parts/res/js/jquery.min.js"></script>
+    <script src="./parts/res/js/prettify.js"></script>
+    <script src="./parts/res/js/script.js"></script>
+
+    <footer>Copyright (C) 2018 Xamarin Inc., Microsoft.<br><a target="_blank" href="http://university.xamarin.com">Visit Xamarin University for more classes and content</a></footer>
+</body>
+</html>
