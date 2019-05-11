@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+    <title>Identifying and breaking strong reference cycles</title>
+    <link rel="stylesheet" type="text/css" href="./res/styles/normalize.css">
+    <link rel="stylesheet" type="text/css" href="./res/styles/prettify.css" />
+    <link rel="stylesheet" type="text/css" href="./res/styles/styles.css">
+</head>
+
+<body>
+    <!-- Use the same title as the StartHere -->
+    <header>Diagnosing Memory Management Issues</header>
+
+    <section id="main">
+
+        <h1 id="page-title"></h1>
+
+        <h2>Duration</h2>
+        <p>15 minutes</p>
+
+        <h2>Goals</h2>
+        <p>
+            In this group exercise, we will identify a memory leak in a Xamarin.iOS application which is due to a user-peer reference cycle.
+        </p>
+
+        <h2>Assets</h2>
+        <p>
+            The provided <strong>Exercise 3</strong> folder contains a sub-folder named <strong>Start</strong> with a pre-built Xamarin.iOS application which has a strong-reference cycle in it due to a user peer relationship.
+        </p>
+
+        <!-- Steps -->
+        <h1>Steps</h1>
+        <p>
+            Below are the step-by-step instructions to find and fix the reference cycle.
+        </p>
+
+        <h2>Run the application to see the issue</h2>
+        <p>
+        Let's start by familiarizing ourselves with the starter solution.
+        </p>
+        <ol>
+            <li>Open the <b>UserPeers.sln</b> solution.
+            </li>
+            <li>
+            Run the application to see what it does. It should show a blank screen with a toolbar with three buttons:
+            </li>
+
+            <img src="./res/images/part3-toolbar.png" />
+
+            <ul class="indent-none">
+                <li>"+" to add a custom view onto the screen.</li>
+                <li>"X" to remove the custom view from the screen.</li>
+                <li>"Trash" to perform a GC.</li>
+            </ul>
+
+            <li>
+                If you press the "+" button, you will get a new view added to the screen:
+            </li>
+
+            <img src="./res/images/part3-new-view.png" style='border:1px solid #999999' />
+
+            <li>
+            You can tap on the rectangle to get it to change the color.
+            </li>
+            
+            <li>
+                Tapping the "X" button will remove it from the screen. 
+            </li>
+
+            <li>
+                Tapping the trash can icon will perform a GC. Notice that in the debug console you will see output as the object is created/destroyed:
+            </li>        
+
+<pre class="codeblock">
+CustomParentView created, 1 live instances
+CustomChildView created, 1 live instances
+Triggering GC.
+</pre>
+            <li>
+                Create and destroy the view a few times - you should see the counter continuing to increase but it never goes down; we're leaking the custom view every time we add it.
+            </li>
+        </ol>
+
+        <h2>Explore the source code</h2>
+        <p>
+        Next, lets look at the code for the application to see if we can identify the issue.
+        </p>
+        <ol>
+            <li>
+                Expand the solution contents.
+                <ul class="indent-none">
+                    <li>It has a single main <code>ViewController</code>. which provides the main screen you interact with.</li>
+                    <li>It has a <b>Views</b> folder which contains two custom view derived classes. Both of these report their total live instances as they are created or disposed.</li>
+                </ul>
+            </li>
+
+            <li>
+                The <b>ViewController.cs</b> class is what adds and removes the view. Check to make sure it's removing the subview and ensuring it doesn't hold a live reference.
+            </li>
+
+            <li>
+                Next, check the parent and child views to see how the relationships are held between them. Notice that the child view holds a strong reference to the parent view so it can change the background fill color when it's touched.
+            </li>
+
+            <li>
+                Recall from the lecture that managed to native circular references cause issues in Xamarin.iOS due to the difference in how memory is handled between Mono and iOS. 
+            </li>
+        </ol>
+
+        <h2>Approaches to fixing the leak.</h2>
+        <p>
+            There are multiple ways to fix this problem. Let's try each one in turn.
+        </p>
+        <ol>
+            <li>
+            First, the easiest way to fix the problem is to force the parent to be disposed. Open the <b>ViewController.cs</b> source file and locate the method where we remove the subview. Add a call to <code>Dispose</code> before setting the field to null.
+            </li>
+
+            <li>
+            Run the app and see if it cleans up the view - add and remove a few subviews and force GCs to make sure the counter always ends up at zero.
+            </li>
+
+            <li>
+            That's an easy fix, but it requires that our <em>client</em> correct the issue - really the problem is in the parent/child relationship established by the custom views. Remove the call to <code>Dispose</code> and let's see if we can fix it in the child views.
+            </li>
+
+            <li>
+            Override the <code>RemoveFromSuperview</code> method on the <b>CustomParentView.cs</b> class - when it's invoked, get the child from the <code>Subviews</code> collection and set it's <code>Parent</code> property to <code>null</code>.
+            </li>
+
+<p><a href="#" onclick="toggleCode(this,'removeCode');return false;" class="uiitem">Show Code</a><div class="indent-none" id="removeCode" style="display:none;">
+<pre class="prettyprint">
+public override void RemoveFromSuperview ()
+{
+    base.RemoveFromSuperview ();
+    CustomChildView childView = Subviews [0] as CustomChildView;
+    if (childView != null) {
+        childView.Parent = null;
+    }
+}
+</pre></div></p>       
+
+            <li>
+            Run the app again and verify that this new approach <em>also</em> solves the problem.
+            </li>
+
+            <li>
+            There is a third solution to this problem - see if you can remove the direct managed dependency from <code>CustomChildView</code> to <code>CustomParentView</code> by changing how you retrieve your parent. See the final completed solution for this approach.
+            </li>
+        </ol>
+
+        <h1>Summary</h1>
+        <p>
+            In this exercise, we fixed a circular reference problem with Xamarin.iOS where a parent/child relationship caused a View hierarchy to get held in memory. There is a <b>Completed</b> solution in the <b>Exercise 3</b> folder if you'd like to see the final approach.
+        </p>
+        <div class="align-right">
+            <a href="../Start%20Here.html">Go Back</a>
+        </div>
+    </section>
+
+    <script src="./res/js/jquery.min.js"></script>
+    <script src="./res/js/prettify.js"></script>
+    <script src="./res/js/script.js"></script>
+
+    <footer>Copyright (C) 2018 Xamarin Inc., Microsoft.</footer>
+</body>
+</html>

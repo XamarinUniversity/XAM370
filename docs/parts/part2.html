@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+    <title>Finding and fixing delegate reference leaks</title>
+    <link rel="stylesheet" type="text/css" href="./res/styles/normalize.css">
+    <link rel="stylesheet" type="text/css" href="./res/styles/prettify.css" />
+    <link rel="stylesheet" type="text/css" href="./res/styles/styles.css">
+</head>
+
+<body>
+    <!-- Use the same title as the StartHere -->
+    <header>Diagnosing Memory Management Issues</header>
+
+    <section id="main">
+
+        <h1 id="page-title"></h1>
+
+        <h2>Duration</h2>
+        <p>10 minutes</p>
+
+        <h2>Goals</h2>
+        <p>
+            In this exercise, we will identify a memory leak in a Xamarin.Forms application which is being caused by an event handler. You can use the Xamarin Profiler (if you have it installed), or use the techniques outlined below to identify the issue.
+        </p>
+
+        <h2>Assets</h2>
+        <p>
+            The provided <strong>Exercise 2</strong> folder contains a sub-folder named <strong>Start</strong> with a pre-built Xamarin.Forms application. You can use any of the platform head projects as your testing platform.
+        </p>
+
+        <h2>Challenge</h2>
+        <p>
+            We will first need to see if there is a leak in this application.
+            <ul>
+                <li>GC logging has been turned on in this application for Xamarin.iOS and Xamarin.Android (see <b>CSC270</b> for detailed instructions on how to do that).</li>
+                <li>For desktop UWP, use Task Manager to track the memory size.</li>
+            </ul>
+        </p>
+        <p>
+        Once we've recognized there is a leak, we will begin to look for it based on our app behavior.
+            <ol>
+                <li>What is the app doing when the leak occurs?</li>
+                <li>What happens in the code which is executed when the leak happens?</li>
+                <li>Verify that we've identified the leak using a finalizer.</li>
+                <li>Fix the leak.</li>
+                <li>Verify the changes.</li>
+            </ol>
+        </p>
+
+        <!-- Steps -->
+        <h1>Steps</h1>
+        <p>
+            Below are the step-by-step instructions to find and fix the memory leak.
+        </p>
+
+        <h2>Check for memory leaks in our app</h2>
+        <p>
+        Let's start by running our application and seeing if it is leaking memory.
+        </p>
+        <ol>
+            <li>
+            Open the starting <b>NetworkState</b> application from the <b>Exercise 2</b> folder.
+            </li>
+            <li>
+            Build the solution and then run the application in your platform of choice. Here we show it running in iOS:
+            </li>
+            <img src="./res/images/part2-mainpage.png" style='border:1px solid #999999' />
+            <li>
+            Click the <b>GC</b> button in the toolbar to force a GC - you should see output in the IDE. We are particularly interested in the major generation current size / previous size value:
+            </li>
+<pre class="codeblock">
+NetworkStateiOS[5553:1469657] info: GC_MAJOR: (user request) pause 5.79ms, total 5.78ms, bridge 0.00ms major <mark>2944K/2288K</mark> los 61K/0K
+</pre>
+
+            <li>
+            In Visual Studio for Windows, you will see this value shown graphically as an increasing line in the diagnostic view: (note that in the desktop apps it's a very slow increase which may be harder to spot - use Task Manager instead).
+            </li>
+
+            <img src="./res/images/part2-diag-view.png" style='border:1px solid #999999' />
+
+            <li>
+            Finally, for Windows UWP desktop apps, use Task Manager to watch the memory value:
+            </li>
+
+            <img src="./res/images/part2-task-manager.png" style='border:1px solid #999999' />
+
+            <li>
+            Play with the app - there's not much to do with it. Just click the "Show Network Status" button which navigates to a second screen. The screen background will be green when you are connected to a network and red if you are disconnected.
+            </li>
+
+            <li>
+            Do this transition several times (back and forth between the screens). You should notice that your memory continues to grow. In the Xamarin apps, use the "GC" button to force a GC and look at the diagnostic output to see it growing. In Visual Studio, use the diagnostics window or Task Manager.
+            </li>
+        </ol>
+
+        <h2>Identify the leak</h2>
+        <p>
+            We clearly have a memory leak when transitioning to the second screen.
+        </p>
+        <ol>
+            <li>
+            Open the <b>ProblemPage.cs</b> source file and examine the code - it's quite short. You can ignore the "buffers" section at the end, it's there to give the page a bit more bulk and make the leak easier to see since the <code>ContentPage</code> size is relatively small by default.
+            </li>
+
+            <li>
+            Let's verify that the leak is a result of this page. Add a <code>Debug.WriteLine</code> to the constructor of the <code>ProblemPage</code> and output that the page has been created.
+            </li>
+
+            <li>
+            Create a <em>finalizer</em> on the <code>ProblemPage</code> and output that the page is about to be collected. Make sure to surround your finalizer code in a <code>#if DEBUG</code> statement!
+            </li>
+
+<p><a href="#" onclick="toggleCode(this,'diag_code');return false;" class="uiitem">Show Code</a><div class="indent-none" id="diag_code" style="display:none;">
+<pre class="prettyprint">
+public ProblemPage ()
+{
+   ...
+   <mark>Debug.WriteLine ("Created ProblemPage {0}", GetHashCode ());</mark>
+}
+<mark>
+#if DEBUG
+~ProblemPage()
+{
+   Debug.WriteLine ("Finalizing ProblemPage {0}", GetHashCode ());
+}
+#endif
+</mark>
+
+</pre></div></p>       
+
+            <li>
+            Run the app again and switch back and forth between the pages. Does the problem page get collected? Force a GC by clicking the toolbar button - does it get collected now?
+            </li>
+        </ol>
+
+        <h2>Fixing the leaking page</h2>
+        <p>
+        Recall from the lecture that <em>delegates</em> and <em>events</em> are a common source of live references which cause memory leaks in managed code. Notice that the constructor is wiring up an event handler to the <code>CrossConnectivity.Current.ConnectivityChanged</code> event. It turns out that this event is <code>static</code> under the covers - which means our pages are <em>never</em> going to be collected!
+        </p>
+        <ol>
+            <li>We need to <em>unwire</em> from the event. The best place to do this in a Xamarin.Forms application is by overriding the <code>OnDisappearing</code> method. Do it there.
+            </li>
+            <li>
+            Now, let's make sure this is properly paired - it's possible to create the page and reuse it in some cases, so we don't really want to wire up to the event handler in the constructor. Instead, move that registration into the <code>OnAppearing</code> override so it's properly matched with our un-wiring of the event.
+            </li>
+            <li>
+            Run the app again and watch the debug window - does the page get collected now?
+            </li>
+        </ol>
+
+        <h1>Summary</h1>
+        <p>
+            In this exercise, we have identified a problem in a Xamarin.Forms application due to an event handler tied to a static event. We corrected this by properly unregistering from the event handler. This is something you should always watch out for in your code - no matter what type of .NET application you are building!
+        </p>
+        <div class="align-right">
+            <a href="../Start%20Here.html">Go Back</a>
+        </div>
+    </section>
+
+    <script src="./res/js/jquery.min.js"></script>
+    <script src="./res/js/prettify.js"></script>
+    <script src="./res/js/script.js"></script>
+
+    <footer>Copyright (C) 2018 Xamarin Inc., Microsoft.</footer>
+</body>
+</html>
